@@ -1,6 +1,10 @@
 # Statesman Mongoid
 
-Restored mongoid adapters for the Statesman gem.
+Restored mongoid adapters for [Statesman](https://github.com/gocardless/statesman).
+
+TODO: Restore generators and test units
+
+NOTE: This is an early salvage of the dropped mongoid support with a couple of fixes and some basic usage testing, use at your own risk and feel free to contribute
 
 ## Installation
 
@@ -20,7 +24,13 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+TODO: Expand usage instructions 
+
+Follow instructions in the Statesman's doc and replace invoked classes with these ones when approriate:
+``` ruby
+Statesman::Adapters::Mongoid
+Statesman::Adapters::MongoidTransition
+```
 
 ## Development
 
