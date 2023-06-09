@@ -33,17 +33,24 @@ module Statesman
         @last_transition = nil
       end
 
-      def history(*)
+      def history(force_reload: false)
+        reset if force_reload
         transitions_for_parent.asc(:sort_key)
       end
 
       def last(force_reload: false)
         if force_reload
-          @last_transition = history.last
+          @last_transition = history(force_reload: true).last
         else
           @last_transition ||= history.last
         end
       end
+
+      def reset
+        # Aggressive, but the query cache can't be targeted at a more granular level
+        ::Mongoid::QueryCache.clear_cache
+      end
+
 
       private
 
