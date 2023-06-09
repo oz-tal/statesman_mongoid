@@ -4,7 +4,7 @@ Restored mongoid adapters for [Statesman](https://github.com/gocardless/statesma
 
 TODO: Restore generators and test units
 
-NOTE: This is an early salvage of the dropped mongoid support with a couple of fixes and some basic usage testing, use at your own risk and feel free to contribute
+NOTE: This is an early salvage of the dropped mongoid support with a refitted queries adapter, a couple of fixes and some manual testing, use at your own risk and feel free to contribute.
 
 ## Installation
 
@@ -30,6 +30,7 @@ Follow instructions in the Statesman's doc and replace invoked classes with thes
 ``` ruby
 Statesman::Adapters::Mongoid
 Statesman::Adapters::MongoidTransition
+Statesman::Adapters::MongoidQueries
 ```
 
 ## Development
@@ -40,7 +41,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/statesman_mongoid.
+Bug reports and pull requests are welcome on GitHub at https://github.com/oz-tal/statesman_mongoid.
 
 ## License
 
