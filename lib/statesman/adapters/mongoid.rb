@@ -1,4 +1,4 @@
-# Restored mongoid support, untouched
+# Restored mongoid support with feature parity
 # Extracted from commit b9906ee1cf0ac6c1bbdd56c003ffe407c2f59833
 
 module Statesman

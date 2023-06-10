@@ -1,0 +1,7 @@
+class <%= klass %>
+  include Statesman::Adapters::MongoidTransition
+
+  index({ sort_key: 1 })
+
+  belongs_to :<%= parent %><%= class_name_option %>, index: true
+end
