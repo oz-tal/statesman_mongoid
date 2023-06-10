@@ -94,12 +94,41 @@ module Statesman
 
         def states_where(states)
           ids = aggregate_ids_for_most_recent(states, inclusive_match: true)
+
+          if initial_state.to_s.in?(states.map(&:to_s))
+            all_ids = aggregate_ids_for_all_state(states)
+            ids += model.where(_id: { '$nin' => all_ids }).pluck(:id)
+          end
+
           model.where(_id: { '$in' => ids })
         end
 
         def states_where_not(states)
           ids = aggregate_ids_for_most_recent(states, inclusive_match: false)
+
+          unless initial_state.to_s.in?(states.map(&:to_s))
+            all_ids = aggregate_ids_for_all_state(states)
+            ids += model.where(_id: { '$nin' => all_ids }).pluck(:id)
+          end
+
           model.where(_id: { '$in' => ids })
+        end
+
+        def aggregate_ids_for_all_state(states)
+          aggregation = [
+            # Group by foreign key
+            {
+              '$group': {
+                _id: "$#{model_foreign_key}",
+                model_foreign_key => { '$first': "$#{model_foreign_key}" },
+              },
+            },
+            # Trim response to only the foreign key
+            { '$project': { _id: 0 } },
+          ]
+
+          # Hit the database and return a flat array of ids
+          transition_class.collection.aggregate(aggregation).pluck(model_foreign_key)
         end
 
         def aggregate_ids_for_most_recent(states, inclusive_match: true)
