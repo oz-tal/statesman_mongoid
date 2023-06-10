@@ -45,6 +45,14 @@ module Statesman
 
           query_builder = QueryBuilder.new(base, **@args)
 
+          base.define_singleton_method(:most_recent_transition_join) do
+            puts <<~STUB_NOTE
+              \e[1;33mmost_recent_transition_join\e[0;33m is a stub to provide feature-parity
+              with the default ActiveRecord adapters, Mongoid doesn't support joins\e[0m
+            STUB_NOTE
+            self
+          end
+
           define_in_state(base, query_builder)
           define_not_in_state(base, query_builder)
 

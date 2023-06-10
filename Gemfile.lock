@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    statesman_mongoid (0.4.2)
+    statesman_mongoid (0.4.3)
       statesman (~> 10.0)
 
 GEM
