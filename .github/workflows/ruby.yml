@@ -18,8 +18,9 @@ permissions:
 
 jobs:
   test:
-
+    environment: test
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         ruby-version: ['2.7', '3.0', '3.2']
