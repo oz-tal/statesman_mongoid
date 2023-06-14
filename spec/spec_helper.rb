@@ -2,9 +2,14 @@
 
 # Test coverage metrics
 require 'simplecov'
-SimpleCov.start
 require 'simplecov-json'
- SimpleCov.formatter = SimpleCov::Formatter::JSONFormatter
+SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new([
+  SimpleCov::Formatter::HTMLFormatter,
+  SimpleCov::Formatter::JSONFormatter
+])
+SimpleCov.start do
+  enable_coverage :branch
+end
 
 require "statesman"
 # We have to include all of Rails to make rspec-rails work
