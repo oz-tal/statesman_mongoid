@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+# Test coverage metrics
+require 'simplecov'
+SimpleCov.start
+require 'simplecov-json'
+ SimpleCov.formatter = SimpleCov::Formatter::JSONFormatter
+
 require "statesman"
 # We have to include all of Rails to make rspec-rails work
 require "rails"

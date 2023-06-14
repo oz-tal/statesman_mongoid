@@ -17,3 +17,8 @@ group :development do
   gem "pry"
   gem "test-unit", "~> 3.3" if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.2.0")
 end
+
+group :test do
+  gem 'simplecov', require: false
+  gem 'simplecov-json', :require => false
+end

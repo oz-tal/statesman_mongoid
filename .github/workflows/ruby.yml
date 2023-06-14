@@ -42,5 +42,18 @@ jobs:
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
+    - name: Setup Code Climate test-reporter
+      environment: test
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
+        ./cc-test-reporter before-build
+
     - name: Run tests
       run: bundle exec rspec
+
+    - name: Publish code coverage
+      environment: test
+      run: |
+        export GIT_BRANCH="${GITHUB_REF/refs\/heads\//}"
+        ./cc-test-reporter after-build -r ${{secrets.CC_TEST_REPORTER_ID}}
