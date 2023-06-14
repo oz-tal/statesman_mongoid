@@ -1,10 +1,6 @@
 # Statesman Mongoid
 
-Mongoid adapters for [Statesman](https://github.com/gocardless/statesman). 
-
-TODO: Restore & update specs
-
-NOTE: Restored Statesman's mongoid support with some fixes & updates. This project is in an early stage, please report any bugs or missing features. Use at your own risk and feel free to contribute.
+Set of adapters to use [Mongoid](https://github.com/mongodb/mongoid) as the persistence layer for [Statesman](https://github.com/gocardless/statesman). Provide feature parity with default adapters, generators and specs in an hassle-free manner.
 
 ## Installation
 
@@ -24,16 +20,14 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Expand usage instructions 
-
-Follow instructions in the Statesman's doc and replace invoked classes with these ones when approriate:
+Follow instructions in the Statesman's doc and simply replace the ActiveRecord adapters with these ones when approriate:
 ``` ruby
 Statesman::Adapters::Mongoid
 Statesman::Adapters::MongoidTransition
 Statesman::Adapters::MongoidQueries
 ```
 
-Generator:
+Generator(s) specific to mongoid:
 ```
 rails generate statesman:mongoid_transition Order OrderTransition
 ```

@@ -45,4 +45,8 @@ RSpec.configure do |config|
       raise(error)
     end
   end
+
+  config.before(:each, mongo: true) do
+    Mongoid.purge!
+  end
 end
