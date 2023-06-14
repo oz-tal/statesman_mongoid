@@ -23,9 +23,11 @@ jobs:
     strategy:
       matrix:
         ruby-version: ['2.7', '3.0', '3.2']
+        mongodb-version: ['4.4', '5.0', '6.0', '7.0']
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Ruby
     # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
     # change this to (see https://github.com/ruby/setup-ruby#versioning):
@@ -34,5 +36,11 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.8.0
+      with:
+        mongodb-version: ${{ matrix.mongodb-version }}
+
     - name: Run tests
       run: bundle exec rspec
