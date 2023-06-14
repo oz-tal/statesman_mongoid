@@ -1,6 +1,8 @@
 # Statesman Mongoid
 
 [![Gem Version](https://badge.fury.io/rb/statesman_mongoid.svg)](https://badge.fury.io/rb/statesman_mongoid)
+[![Maintainability](https://api.codeclimate.com/v1/badges/e9d5dfd27f76acc8fa3a/maintainability)](https://codeclimate.com/github/oz-tal/statesman_mongoid/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/e9d5dfd27f76acc8fa3a/test_coverage)](https://codeclimate.com/github/oz-tal/statesman_mongoid/test_coverage)
 
 Set of adapters to use [Mongoid](https://github.com/mongodb/mongoid) as the persistence layer for [Statesman](https://github.com/gocardless/statesman). Provide feature parity with default adapters, generators and specs in an hassle-free manner.
 

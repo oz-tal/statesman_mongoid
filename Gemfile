@@ -19,5 +19,6 @@ group :development do
 end
 
 group :test do
+  # Versions 18.x and above are incompatible with CodeClimate
   gem 'simplecov', '~> 0.17.0' , require: false
 end
