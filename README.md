@@ -1,5 +1,7 @@
 # Statesman Mongoid
 
+[![Gem Version](https://badge.fury.io/rb/statesman_mongoid.svg)](https://badge.fury.io/rb/statesman_mongoid)
+
 Set of adapters to use [Mongoid](https://github.com/mongodb/mongoid) as the persistence layer for [Statesman](https://github.com/gocardless/statesman). Provide feature parity with default adapters, generators and specs in an hassle-free manner.
 
 ## Installation
