@@ -20,7 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-Follow instructions in the Statesman's doc and simply replace the ActiveRecord adapters with these ones when approriate:
+Follow instructions in the Statesman's doc and simply replace the ActiveRecord adapters with these ones when appropriate:
 ``` ruby
 Statesman::Adapters::Mongoid
 Statesman::Adapters::MongoidTransition
