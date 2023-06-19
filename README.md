@@ -1,6 +1,7 @@
 # Statesman Mongoid
 
 [![Gem Version](https://badge.fury.io/rb/statesman_mongoid.svg)](https://badge.fury.io/rb/statesman_mongoid)
+[![Build](https://github.com/oz-tal/statesman_mongoid/workflows/Ruby/badge.svg)](https://github.com/oz-tal/statesman_mongoid/actions)
 [![Maintainability](https://api.codeclimate.com/v1/badges/e9d5dfd27f76acc8fa3a/maintainability)](https://codeclimate.com/github/oz-tal/statesman_mongoid/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/e9d5dfd27f76acc8fa3a/test_coverage)](https://codeclimate.com/github/oz-tal/statesman_mongoid/test_coverage)
 
