@@ -23,11 +23,17 @@ module Statesman
                                                   sort_key: next_sort_key,
                                                   statesman_metadata: metadata)
 
-        @observer.execute(:before, from, to, transition)
-        transition.save!
-        @last_transition = transition
-        @observer.execute(:after, from, to, transition)
-        @observer.execute(:after_commit, from, to, transition)
+        transition.with_session do |session|
+          @observer.execute(:before, from, to, transition)
+
+          transition.save!
+
+          @last_transition = transition
+          @observer.execute(:after, from, to, transition)
+          # TODO: Create `add_after_commit_callback` method (require expected callback support in the upcoming Mongoid 9.0)
+          @observer.execute(:after_commit, from, to, transition)
+        end
+
         transition
       ensure
         @last_transition = nil

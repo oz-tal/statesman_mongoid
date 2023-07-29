@@ -47,6 +47,10 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/oz-tal/statesman_mongoid.
 
+## known issues
+
+Transactions in Mongoid 8.x (and under) lack support for `after_commit` callbacks and `Mongoid::Errors::Rollback` raising. This could affect transactional integrity in some situation. Since the required features are present in Mongoid 9.0.0-alpha, a fix is planned after the new major version rollout of the alpha phase.
+
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

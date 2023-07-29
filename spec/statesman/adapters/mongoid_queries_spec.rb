@@ -166,40 +166,42 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       end
     end
 
-    # TODO: This test require a mongoid replica set and doesn't work with a standalone server.
-    #       It currently never ran and will require some further investigation.
-    # context "after_commit transactional integrity" do
-    #   before do
-    #     MyStateMachine.class_eval do
-    #       cattr_accessor(:after_commit_callback_executed) { false }
+    # REQUIRE EXPECTED TRANSACTIONS FEATURES FROM THE UPCOMING MONGOID 9.0
+    # 
+  #   context "after_commit transactional integrity" do
+  #     before do
+  #       MyStateMachine.class_eval do
+  #         cattr_accessor(:after_commit_callback_executed) { false }
 
-    #       after_transition(from: :initial, to: :succeeded, after_commit: true) do
-    #         # This leaks state in a testable way if transactional integrity is broken.
-    #         MyStateMachine.after_commit_callback_executed = true
-    #       end
-    #     end
-    #   end
+  #         after_transition(from: :initial, to: :succeeded, after_commit: true) do
+  #           # This leaks state in a testable way if transactional integrity is broken.
+  #           MyStateMachine.after_commit_callback_executed = true
+  #         end
+  #       end
+  #     end
 
-    #   after do
-    #     MyStateMachine.class_eval do
-    #       callbacks[:after_commit] = []
-    #     end
-    #   end
+  #     after do
+  #       MyStateMachine.class_eval do
+  #         callbacks[:after_commit] = []
+  #       end
+  #     end
 
-    #   let!(:model) do
-    #     MyMongoidModel.create
-    #   end
+  #     let!(:model) do
+  #       MyMongoidModel.create
+  #     end
 
-    #   it do
-    #     expect do
-    #       model.with_session do |session|
-    #         session.start_transaction
-    #         model.state_machine.transition_to!(:succeeded)
-    #         raise Mongoid::Errors::Rollback
-    #       end
-    #     end.to_not change(MyStateMachine, :after_commit_callback_executed)
-    #   end
-    # end
+  #     it do
+  #       expect do
+  #         model.with_session do |session|
+  #           session.start_transaction
+  #           model.state_machine.transition_to!(:succeeded)
+
+  #           # This error currently exist in Mongoid 9.0.0.alpha, eventual support is expected.
+  #           # raise Mongoid::Errors::Rollback
+  #         end
+  #       end.to_not change(MyStateMachine, :after_commit_callback_executed)
+  #     end
+  #   end
   end
 
   context "using old configuration method" do
