@@ -1,6 +1,8 @@
 # Restored mongoid support, fixes applied: concernized the module and added includes + fields + index
 # Extracted from commit b9906ee1cf0ac6c1bbdd56c003ffe407c2f59833
 
+require 'active_support'
+
 module Statesman
   module Adapters
     module MongoidTransition
