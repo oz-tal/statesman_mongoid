@@ -42,6 +42,54 @@ describe Statesman::Adapters::Mongoid, mongo: true do
     end
   end
 
+  describe 'MongoidTransition' do
+    describe '.updated_timestamp_column' do
+      it 'defaults to :updated_at' do
+        expect(MyMongoidModelTransition.updated_timestamp_column).to eq(:updated_at)
+      end
+
+      it 'can be customized' do
+        original = MyMongoidModelTransition.updated_timestamp_column
+        begin
+          MyMongoidModelTransition.updated_timestamp_column = :modified_at
+          expect(MyMongoidModelTransition.updated_timestamp_column).to eq(:modified_at)
+        ensure
+          MyMongoidModelTransition.updated_timestamp_column = original
+        end
+      end
+
+      it 'can be set to nil to disable timestamp touching' do
+        original = MyMongoidModelTransition.updated_timestamp_column
+        begin
+          MyMongoidModelTransition.updated_timestamp_column = nil
+          expect(MyMongoidModelTransition.updated_timestamp_column).to be_nil
+        ensure
+          MyMongoidModelTransition.updated_timestamp_column = original
+        end
+      end
+    end
+
+    describe '#from_state' do
+      let(:adapter) do
+        described_class.new(MyMongoidModelTransition, model, observer)
+      end
+
+      it 'returns from_state when field exists and is populated' do
+        adapter.create(:initial, :succeeded)
+        transition = adapter.last
+        expect(transition.from_state).to eq('initial')
+      end
+
+      it 'stores from_state on transition creation' do
+        adapter.create(:initial, :succeeded)
+        adapter.create(:succeeded, :failed)
+        transitions = adapter.history.to_a
+        expect(transitions[0].from_state).to eq('initial')
+        expect(transitions[1].from_state).to eq('succeeded')
+      end
+    end
+  end
+
   describe '#last' do
     let(:adapter) do
       described_class.new(MyMongoidModelTransition, model, observer)

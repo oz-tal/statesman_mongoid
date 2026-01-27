@@ -71,7 +71,8 @@ module Statesman
         end
 
         def included(base)
-          ensure_inheritance(base)
+          # Only set up inheritance if subclasses already exist (matching Statesman 13.x behavior)
+          ensure_inheritance(base) if base.respond_to?(:subclasses) && base.subclasses.any?
 
           query_builder = QueryBuilder.new(base, **@args)
 
@@ -85,7 +86,8 @@ module Statesman
 
           define_method(:reload) do |*a|
             instance = super(*a)
-            instance.state_machine.reset if instance.respond_to?(:state_machine, true)
+            # Use send to access potentially private state_machine method (Statesman 13.x)
+            instance.send(:state_machine).reset if instance.respond_to?(:state_machine, true)
             instance
           end
         end

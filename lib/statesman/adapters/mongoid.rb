@@ -142,9 +142,21 @@ module Statesman
       end
 
       def update_most_recents
+        updates = { most_recent: false }
+
+        # Touch updated_at if configured (matching AR adapter behavior)
+        # Check for updated_timestamp_column class attribute, fallback to checking field exists
+        timestamp_column = if transition_class.respond_to?(:updated_timestamp_column)
+                             transition_class.updated_timestamp_column
+                           elsif transition_class.fields.key?('updated_at')
+                             :updated_at
+                           end
+
+        updates[timestamp_column] = Time.current if timestamp_column
+
         transitions_for_parent
           .where(most_recent: true)
-          .update_all(most_recent: false)
+          .update_all(updates)
       end
 
       def transition_class_hash_fields

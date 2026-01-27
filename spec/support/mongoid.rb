@@ -20,21 +20,11 @@ class MyStateMachine
 end
 
 class MyMongoidModelTransition
-  include Mongoid::Document
-  include Mongoid::Timestamps
+  include Statesman::Adapters::MongoidTransition
 
-  field :to_state, type: String
-  field :from_state, type: String
-  field :sort_key, type: Integer
-  field :most_recent, type: Boolean
-  field :statesman_metadata, type: Hash
-
-  index(sort_key: 1)
   index({ my_mongoid_model_id: 1, most_recent: 1 }, unique: true, sparse: true)
 
   belongs_to :my_mongoid_model, index: true
-
-  include Statesman::Adapters::MongoidTransition
 end
 
 class MyMongoidModel
@@ -57,21 +47,11 @@ class MyMongoidModel
 end
 
 class OtherMongoidModelTransition
-  include Mongoid::Document
-  include Mongoid::Timestamps
+  include Statesman::Adapters::MongoidTransition
 
-  field :to_state, type: String
-  field :from_state, type: String
-  field :sort_key, type: Integer
-  field :most_recent, type: Boolean
-  field :statesman_metadata, type: Hash
-
-  index(sort_key: 1)
   index({ other_mongoid_model_id: 1, most_recent: 1 }, unique: true, sparse: true)
 
   belongs_to :my_mongoid_model, index: true
-
-  include Statesman::Adapters::MongoidTransition
 end
 
 class OtherMongoidModel
