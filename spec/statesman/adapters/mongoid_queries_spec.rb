@@ -216,8 +216,9 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
           nil
         end.not_to change(MyStateMachine, :after_commit_callback_executed)
 
-        # The transition should not be persisted
-        expect(fresh_model.state_machine.current_state).to eq('initial')
+        # Reload from database to verify rollback - the transition should not be persisted
+        fresh_model.reload
+        expect(fresh_model.my_mongoid_model_transitions.count).to eq(0)
       end
     end
   end

@@ -152,24 +152,34 @@ describe Statesman::Adapters::Mongoid, 'transaction features', mongo: true do
           unless StatesmanMongoid.transactions_available?
             skip 'Transactions not available (requires Mongoid 9+ with replica set)'
           end
+
+          # Ensure indexes are created for this test
+          MyMongoidModelTransition.create_indexes
         end
 
-        it 'raises TransitionConflictError on duplicate most_recent' do
+        it 'raises error on duplicate most_recent via unique index' do
           # Create a transition which sets most_recent=true
           adapter.create(:initial, :succeeded)
+          first_transition = adapter.last
+
+          # Verify the first transition has most_recent=true
+          expect(first_transition.most_recent).to be true
 
           # Manually create a conflicting transition with most_recent=true
           # This simulates a race condition where two processes try to create
-          # transitions simultaneously
+          # transitions simultaneously (bypassing the adapter's update_most_recents)
           conflicting = MyMongoidModelTransition.new(
             my_mongoid_model: model,
             to_state: 'failed',
             sort_key: 20,
-            most_recent: true, # Conflict - already have a most_recent=true
+            most_recent: true, # Conflict - already have a most_recent=true for this model
             statesman_metadata: {}
           )
 
-          expect { conflicting.save! }.to raise_error(Mongo::Error::OperationFailure)
+          # The unique sparse index should prevent this
+          expect { conflicting.save! }.to raise_error(Mongo::Error::OperationFailure) do |error|
+            expect(error.message).to include('duplicate key error')
+          end
         end
       end
 
