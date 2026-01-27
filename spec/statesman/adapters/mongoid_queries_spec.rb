@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "spec_helper"
-require "statesman/adapters/mongoid_queries"
+require 'spec_helper'
+require 'statesman/adapters/mongoid_queries'
 
 describe Statesman::Adapters::MongoidQueries, mongo: true do
   def configure_old(klass, transition_class)
@@ -44,7 +44,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
     model
   end
 
-  shared_examples "testing methods" do
+  shared_examples 'testing methods' do
     before do
       case config_type
       when :old
@@ -61,29 +61,29 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       OtherMongoidModel.send(:belongs_to, :my_mongoid_model)
     end
 
-    describe ".in_state" do
-      context "given a single state" do
+    describe '.in_state' do
+      context 'given a single state' do
         subject { MyMongoidModel.in_state(:succeeded) }
 
         it { is_expected.to include model }
         it { is_expected.to_not include other_model }
       end
 
-      context "given multiple states" do
+      context 'given multiple states' do
         subject { MyMongoidModel.in_state(:succeeded, :failed) }
 
         it { is_expected.to include model }
         it { is_expected.to include other_model }
       end
 
-      context "given the initial state" do
+      context 'given the initial state' do
         subject { MyMongoidModel.in_state(:initial) }
 
         it { is_expected.to include initial_state_model }
         it { is_expected.to include returned_to_initial_model }
       end
 
-      context "given an array of states" do
+      context 'given an array of states' do
         subject { MyMongoidModel.in_state(%i[succeeded failed]) }
 
         it { is_expected.to include model }
@@ -91,15 +91,15 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       end
     end
 
-    describe ".not_in_state" do
-      context "given a single state" do
+    describe '.not_in_state' do
+      context 'given a single state' do
         subject { MyMongoidModel.not_in_state(:failed) }
 
         it { is_expected.to include model }
         it { is_expected.to_not include other_model }
       end
 
-      context "given multiple states" do
+      context 'given multiple states' do
         subject(:not_in_state) { MyMongoidModel.not_in_state(:succeeded, :failed) }
 
         it do
@@ -108,7 +108,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         end
       end
 
-      context "given an array of states" do
+      context 'given an array of states' do
         subject(:not_in_state) { MyMongoidModel.not_in_state(%i[succeeded failed]) }
 
         it do
@@ -118,14 +118,14 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       end
     end
 
-    context "with a custom name for the transition association" do
+    context 'with a custom name for the transition association' do
       before do
         # Switch to using OtherMongoidModelTransition, so the existing
         # relation with MyMongoidModelTransition doesn't interfere with
         # this spec.
         MyMongoidModel.send(:has_many,
-                                 :custom_name,
-                                 class_name: "OtherMongoidModelTransition")
+                            :custom_name,
+                            class_name: 'OtherMongoidModelTransition')
 
         MyMongoidModel.class_eval do
           def self.transition_class
@@ -134,23 +134,23 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         end
       end
 
-      describe ".in_state" do
+      describe '.in_state' do
         subject(:query) { MyMongoidModel.in_state(:succeeded) }
 
         specify { expect { query }.to_not raise_error }
       end
     end
 
-    context "with a custom primary key for the model" do
+    context 'with a custom primary key for the model' do
       before do
         # Switch to using OtherMongoidModelTransition, so the existing
         # relation with MyMongoidModelTransition doesn't interfere with
         # this spec.
         # Configure the relationship to use a different primary key,
         MyMongoidModel.send(:has_many,
-                                 :custom_name,
-                                 class_name: "OtherMongoidModelTransition",
-                                 primary_key: :external_id)
+                            :custom_name,
+                            class_name: 'OtherMongoidModelTransition',
+                            primary_key: :external_id)
 
         MyMongoidModel.class_eval do
           def self.transition_class
@@ -159,83 +159,93 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         end
       end
 
-      describe ".in_state" do
+      describe '.in_state' do
         subject(:query) { MyMongoidModel.in_state(:succeeded) }
 
         specify { expect { query }.to_not raise_error }
       end
     end
 
-    # REQUIRE EXPECTED TRANSACTIONS FEATURES FROM THE UPCOMING MONGOID 9.0
-    # 
-  #   context "after_commit transactional integrity" do
-  #     before do
-  #       MyStateMachine.class_eval do
-  #         cattr_accessor(:after_commit_callback_executed) { false }
+    # Transaction integrity tests (Mongoid 9+ with replica set)
+    context 'after_commit transactional integrity' do
+      before do
+        unless StatesmanMongoid.transactions_available?
+          skip 'Transactions not available (requires Mongoid 9+ with replica set)'
+        end
 
-  #         after_transition(from: :initial, to: :succeeded, after_commit: true) do
-  #           # This leaks state in a testable way if transactional integrity is broken.
-  #           MyStateMachine.after_commit_callback_executed = true
-  #         end
-  #       end
-  #     end
+        MyStateMachine.class_eval do
+          cattr_accessor(:after_commit_callback_executed) { false }
 
-  #     after do
-  #       MyStateMachine.class_eval do
-  #         callbacks[:after_commit] = []
-  #       end
-  #     end
+          after_transition(from: :initial, to: :succeeded, after_commit: true) do
+            MyStateMachine.after_commit_callback_executed = true
+          end
+        end
+      end
 
-  #     let!(:model) do
-  #       MyMongoidModel.create
-  #     end
+      after do
+        next unless StatesmanMongoid.transactions_available?
 
-  #     it do
-  #       expect do
-  #         model.with_session do |session|
-  #           session.start_transaction
-  #           model.state_machine.transition_to!(:succeeded)
+        MyStateMachine.after_commit_callback_executed = false
+        MyStateMachine.class_eval do
+          callbacks[:after_commit] = []
+        end
+      end
 
-  #           # This error currently exist in Mongoid 9.0.0.alpha, eventual support is expected.
-  #           # raise Mongoid::Errors::Rollback
-  #         end
-  #       end.to_not change(MyStateMachine, :after_commit_callback_executed)
-  #     end
-  #   end
+      let(:fresh_model) { MyMongoidModel.create }
+
+      it 'fires after_commit only after successful transaction' do
+        expect do
+          fresh_model.state_machine.transition_to!(:succeeded)
+        end.to change(MyStateMachine, :after_commit_callback_executed).from(false).to(true)
+      end
+
+      it 'does not fire after_commit when transaction is rolled back' do
+        MyStateMachine.after_commit_callback_executed = false
+
+        expect do
+          MyMongoidModelTransition.transaction do
+            fresh_model.state_machine.transition_to!(:succeeded)
+            raise ::Mongoid::Errors::Rollback
+          end
+        rescue Statesman::TransitionFailedError
+          # Expected
+        end.not_to change(MyStateMachine, :after_commit_callback_executed)
+      end
+    end
   end
 
-  context "using old configuration method" do
+  context 'using old configuration method' do
     let(:config_type) { :old }
 
-    include_examples "testing methods"
+    include_examples 'testing methods'
   end
 
-  context "using new configuration method" do
+  context 'using new configuration method' do
     let(:config_type) { :new }
 
-    include_examples "testing methods"
+    include_examples 'testing methods'
   end
 
-  context "with no association with the transition class" do
+  context 'with no association with the transition class' do
     before do
       class UnknownModelTransition < OtherMongoidModelTransition; end
 
       configure_old(MyMongoidModel, UnknownModelTransition)
     end
 
-    describe ".in_state" do
+    describe '.in_state' do
       subject(:query) { MyMongoidModel.in_state(:succeeded) }
 
-      it "raises a helpful error" do
+      it 'raises a helpful error' do
         expect { query }.to raise_error(Statesman::MissingTransitionAssociation)
       end
     end
   end
 
-  describe "check_missing_methods!" do
+  describe 'check_missing_methods!' do
     subject(:check_missing_methods!) { described_class.check_missing_methods!(base) }
 
-    context "when base has no missing methods" do
+    context 'when base has no missing methods' do
       let(:base) do
         Class.new do
           def self.transition_class; end
@@ -244,17 +254,17 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         end
       end
 
-      it "does not raise an error" do
+      it 'does not raise an error' do
         expect { check_missing_methods! }.to_not raise_exception
       end
     end
 
-    context "when base has missing methods" do
+    context 'when base has missing methods' do
       let(:base) do
         Class.new
       end
 
-      it "raises an error" do
+      it 'raises an error' do
         expect { check_missing_methods! }.to raise_exception(NotImplementedError)
       end
     end

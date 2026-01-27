@@ -1,21 +1,45 @@
 # frozen_string_literal: true
 
-# Based on the somewhat compatible ActiveRecordQueries at commit 455a21dd74bb7d3b7555de0dd66e2ece9461c22d
+# MongoidQueries provides state-based query scopes for Mongoid models
+#
+# Usage (new style, recommended):
+#   class Order
+#     include Mongoid::Document
+#     include Statesman::Adapters::MongoidQueries[
+#       transition_class: OrderTransition,
+#       initial_state: :pending
+#     ]
+#   end
+#
+# Usage (legacy style):
+#   class Order
+#     include Mongoid::Document
+#
+#     def self.transition_class
+#       OrderTransition
+#     end
+#
+#     def self.initial_state
+#       :pending
+#     end
+#
+#     include Statesman::Adapters::MongoidQueries
+#   end
 
 module Statesman
   module Adapters
     module MongoidQueries
       def self.check_missing_methods!(base)
-        missing_methods = %i[transition_class initial_state].
-          reject { |m| base.respond_to?(m) }
+        missing_methods = %i[transition_class initial_state]
+                          .reject { |m| base.respond_to?(m) }
         return if missing_methods.none?
 
         raise NotImplementedError,
               "#{missing_methods.join(', ')} method(s) should be defined on " \
-              "the model. Alternatively, use the new form of `include " \
-              "Statesman::Adapters::MongoidQueries[" \
-              "transition_class: MyTransition, " \
-              "initial_state: :some_state]`"
+              'the model. Alternatively, use the new form of `include ' \
+              'Statesman::Adapters::MongoidQueries[' \
+              'transition_class: MyTransition, ' \
+              'initial_state: :some_state]`'
       end
 
       def self.included(base)
@@ -26,8 +50,8 @@ module Statesman
             transition_class: base.transition_class,
             initial_state: base.initial_state,
             most_recent_transition_alias: base.try(:most_recent_transition_alias),
-            transition_name: base.try(:transition_name),
-          ),
+            transition_name: base.try(:transition_name)
+          )
         )
       end
 
@@ -45,11 +69,8 @@ module Statesman
 
           query_builder = QueryBuilder.new(base, **@args)
 
+          # Stub for ActiveRecord compatibility - Mongoid doesn't support joins
           base.define_singleton_method(:most_recent_transition_join) do
-            puts <<~STUB_NOTE
-              \e[1;33mmost_recent_transition_join\e[0;33m is a stub to provide feature-parity
-              with the default ActiveRecord adapters, Mongoid doesn't support joins\e[0m
-            STUB_NOTE
             self
           end
 
@@ -58,9 +79,7 @@ module Statesman
 
           define_method(:reload) do |*a|
             instance = super(*a)
-            if instance.respond_to?(:state_machine, true)
-              instance.state_machine.reset
-            end
+            instance.state_machine.reset if instance.respond_to?(:state_machine, true)
             instance
           end
         end
@@ -101,9 +120,15 @@ module Statesman
         end
 
         def states_where(states)
-          ids = aggregate_ids_for_most_recent(states, inclusive_match: true)
+          states = states.map(&:to_s)
 
-          if initial_state.to_s.in?(states.map(&:to_s))
+          ids = if use_most_recent_optimization?
+                  most_recent_ids_for_states(states)
+                else
+                  aggregate_ids_for_most_recent(states, inclusive_match: true)
+                end
+
+          if initial_state.to_s.in?(states)
             all_ids = aggregate_ids_for_all_state(states)
             ids += model.where(_id: { '$nin' => all_ids }).pluck(:id)
           end
@@ -112,9 +137,15 @@ module Statesman
         end
 
         def states_where_not(states)
-          ids = aggregate_ids_for_most_recent(states, inclusive_match: false)
+          states = states.map(&:to_s)
 
-          unless initial_state.to_s.in?(states.map(&:to_s))
+          ids = if use_most_recent_optimization?
+                  most_recent_ids_not_in_states(states)
+                else
+                  aggregate_ids_for_most_recent(states, inclusive_match: false)
+                end
+
+          unless initial_state.to_s.in?(states)
             all_ids = aggregate_ids_for_all_state(states)
             ids += model.where(_id: { '$nin' => all_ids }).pluck(:id)
           end
@@ -122,17 +153,31 @@ module Statesman
           model.where(_id: { '$in' => ids })
         end
 
-        def aggregate_ids_for_all_state(states)
+        # Fast path using most_recent boolean index
+        def most_recent_ids_for_states(states)
+          transition_class
+            .where(most_recent: true, to_state: { '$in' => states })
+            .pluck(model_foreign_key)
+        end
+
+        # Fast path using most_recent boolean index
+        def most_recent_ids_not_in_states(states)
+          transition_class
+            .where(most_recent: true, to_state: { '$nin' => states })
+            .pluck(model_foreign_key)
+        end
+
+        def aggregate_ids_for_all_state(_states)
           aggregation = [
             # Group by foreign key
             {
-              '$group': {
+              "$group": {
                 _id: "$#{model_foreign_key}",
-                model_foreign_key => { '$first': "$#{model_foreign_key}" },
-              },
+                model_foreign_key => { "$first": "$#{model_foreign_key}" }
+              }
             },
             # Trim response to only the foreign key
-            { '$project': { _id: 0 } },
+            { "$project": { _id: 0 } }
           ]
 
           # Hit the database and return a flat array of ids
@@ -142,29 +187,39 @@ module Statesman
         def aggregate_ids_for_most_recent(states, inclusive_match: true)
           aggregation = [
             # Sort most recent
-            { '$sort': { sort_key: -1 } },
+            { "$sort": { sort_key: -1 } },
             # Group by foreign key & get most recent states
             {
-              '$group': {
+              "$group": {
                 _id: "$#{model_foreign_key}",
-                to_state: { '$first': '$to_state' },
-                model_foreign_key => { '$first': "$#{model_foreign_key}" },
-              },
+                to_state: { "$first": '$to_state' },
+                model_foreign_key => { "$first": "$#{model_foreign_key}" }
+              }
             },
             # Include/exclude states by provided states
-            { '$match': { to_state: { (inclusive_match ? '$in' : '$nin') => states } } },
+            { "$match": { to_state: { (inclusive_match ? '$in' : '$nin') => states } } },
             # Trim response to only the foreign key
-            { '$project': { _id: 0, to_state: 0 } },
+            { "$project": { _id: 0, to_state: 0 } }
           ]
 
           # Hit the database and return a flat array of ids
           transition_class.collection.aggregate(aggregation).pluck(model_foreign_key)
         end
 
-
         private
 
         attr_reader :model, :transition_class, :initial_state
+
+        # Check if we can use the most_recent optimization
+        # Requires: most_recent field exists AND transactions are available
+        def use_most_recent_optimization?
+          return @use_most_recent if defined?(@use_most_recent)
+
+          @use_most_recent =
+            transition_class.fields.key?('most_recent') &&
+            StatesmanMongoid.transactions_available? &&
+            transition_class.where(most_recent: true).exists?
+        end
 
         def transition_name
           @transition_name || transition_class.collection.name.to_sym

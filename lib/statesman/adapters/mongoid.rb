@@ -1,42 +1,46 @@
-# Restored mongoid support with feature parity
-# Extracted from commit b9906ee1cf0ac6c1bbdd56c003ffe407c2f59833
+# frozen_string_literal: true
+
+# Mongoid adapter for Statesman with transaction support
+#
+# Supports two modes of operation:
+# 1. With transactions (Mongoid 9+ and replica set): Full ACID compliance
+# 2. Without transactions (Mongoid 8.x or standalone): Fallback to session-only
+#
+# Transaction support enables:
+# - Proper after_commit callback timing (fires only after successful commit)
+# - Atomic updates when using most_recent optimization
+# - Rollback on errors
 
 module Statesman
   module Adapters
     class Mongoid
-      attr_reader :transition_class
-      attr_reader :parent_model
+      attr_reader :transition_class, :parent_model
 
-      def initialize(transition_class, parent_model, observer, _opts = {})
+      DUPLICATE_KEY_ERROR_CODE = 11_000
+
+      def initialize(transition_class, parent_model, observer, opts = {})
         @transition_class = transition_class
         @parent_model = parent_model
         @observer = observer
-        unless transition_class_hash_fields.include?("statesman_metadata")
-          raise UnserializedMetadataError, metadata_field_error_message
-        end
+        @opts = opts
+
+        return if transition_class_hash_fields.include?('statesman_metadata')
+
+        raise UnserializedMetadataError, metadata_field_error_message
       end
 
       def create(from, to, metadata = {})
         from = from.to_s
         to = to.to_s
-        transition = transitions_for_parent.build(to_state: to,
-                                                  sort_key: next_sort_key,
-                                                  statesman_metadata: metadata)
+        transition = build_transition(from, to, metadata)
 
-        transition.with_session do |session|
-          @observer.execute(:before, from, to, transition)
-
-          transition.save!
-
-          @last_transition = transition
-          @observer.execute(:after, from, to, transition)
-          # TODO: Create `add_after_commit_callback` method (require expected callback support in the upcoming Mongoid 9.0)
-          @observer.execute(:after_commit, from, to, transition)
+        if StatesmanMongoid.transactions_available?
+          create_with_transaction(transition, from, to)
+        else
+          create_without_transaction(transition, from, to)
         end
-
-        transition
-      ensure
-        @last_transition = nil
+      rescue ::Mongo::Error::OperationFailure => e
+        handle_operation_failure(e)
       end
 
       def history(force_reload: false)
@@ -53,12 +57,91 @@ module Statesman
       end
 
       def reset
-        # Aggressive, but the query cache can't be targeted at a more granular level
         ::Mongoid::QueryCache.clear_cache
+        @last_transition = nil
       end
 
-
       private
+
+      def build_transition(from, to, metadata)
+        transition_attributes = {
+          to_state: to,
+          sort_key: next_sort_key,
+          statesman_metadata: metadata
+        }
+
+        # Add from_state if the transition class supports it (Statesman 13.1+)
+        transition_attributes[:from_state] = from if transition_class.fields.key?('from_state')
+
+        # Set most_recent if using optimization and transactions are available
+        transition_attributes[:most_recent] = true if use_most_recent? && StatesmanMongoid.transactions_available?
+
+        transitions_for_parent.build(transition_attributes)
+      end
+
+      # Full transaction mode (Mongoid 9+ with replica set)
+      # - Proper atomic commits
+      # - after_commit fires only after successful transaction commit
+      def create_with_transaction(transition, from, to)
+        transition_class.transaction do
+          @observer.execute(:before, from, to, transition)
+
+          # Update previous most_recent flag within transaction
+          update_most_recents if use_most_recent?
+
+          transition.save!
+          @last_transition = transition
+          @observer.execute(:after, from, to, transition)
+        end
+
+        # after_commit fires only after successful transaction commit
+        @observer.execute(:after_commit, from, to, transition)
+        transition
+      rescue ::Mongoid::Errors::Rollback
+        reset
+        raise Statesman::TransitionFailedError, 'Transaction was rolled back'
+      ensure
+        @last_transition = nil unless transition&.persisted?
+      end
+
+      # Fallback mode (Mongoid 8.x or standalone MongoDB)
+      # - Session-only (no transaction atomicity)
+      # - after_commit fires immediately after save
+      def create_without_transaction(transition, from, to)
+        transition.with_session do |_session|
+          @observer.execute(:before, from, to, transition)
+          transition.save!
+          @last_transition = transition
+          @observer.execute(:after, from, to, transition)
+          @observer.execute(:after_commit, from, to, transition)
+        end
+
+        transition
+      ensure
+        @last_transition = nil
+      end
+
+      def handle_operation_failure(error)
+        if duplicate_key_error?(error)
+          reset
+          raise Statesman::TransitionConflictError, error.message
+        end
+        raise
+      end
+
+      def duplicate_key_error?(error)
+        error.code == DUPLICATE_KEY_ERROR_CODE
+      end
+
+      def use_most_recent?
+        transition_class.fields.key?('most_recent')
+      end
+
+      def update_most_recents
+        transitions_for_parent
+          .where(most_recent: true)
+          .update_all(most_recent: false)
+      end
 
       def transition_class_hash_fields
         transition_class.fields.select { |_, v| v.type == Hash }.keys

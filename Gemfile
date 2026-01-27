@@ -10,15 +10,23 @@ elsif ENV['RAILS_VERSION']
   gem "rails", "~> #{ENV['RAILS_VERSION']}"
 end
 
-group :development do
-  gem "mongoid", ">= 3.1" unless ENV["EXCLUDE_MONGOID"]
+if ENV['MONGOID_VERSION']
+  gem "mongoid", "~> #{ENV['MONGOID_VERSION']}"
+end
 
-  # test/unit is no longer bundled with Ruby 2.2, but required by Rails
+if ENV['STATESMAN_VERSION']
+  gem "statesman", "~> #{ENV['STATESMAN_VERSION']}"
+end
+
+group :development do
   gem "pry"
-  gem "test-unit", "~> 3.3" if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("2.2.0")
 end
 
 group :test do
-  # Versions 18.x and above are incompatible with CodeClimate
-  gem 'simplecov', '~> 0.17.0' , require: false
+  gem 'simplecov', require: false
+  # Required as separate gem in Ruby 3.4+
+  gem 'base64'
+  gem 'bigdecimal'
+  gem 'mutex_m'
+  gem 'drb'
 end

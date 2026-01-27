@@ -1,9 +1,9 @@
-require "statesman/adapters/mongoid_transition"
-require "statesman/adapters/mongoid_queries"
-require "mongoid"
+require 'statesman/adapters/mongoid_transition'
+require 'statesman/adapters/mongoid_queries'
+require 'mongoid'
 
 Mongoid.configure do |config|
-  config.connect_to("statesman_test")
+  config.connect_to('statesman_test')
 end
 
 class MyStateMachine
@@ -22,10 +22,13 @@ class MyMongoidModelTransition
   include Mongoid::Timestamps
 
   field :to_state, type: String
+  field :from_state, type: String
   field :sort_key, type: Integer
+  field :most_recent, type: Boolean
   field :statesman_metadata, type: Hash
 
   index(sort_key: 1)
+  index({ my_mongoid_model_id: 1, most_recent: 1 }, unique: true, sparse: true)
 
   belongs_to :my_mongoid_model, index: true
 
@@ -56,10 +59,13 @@ class OtherMongoidModelTransition
   include Mongoid::Timestamps
 
   field :to_state, type: String
+  field :from_state, type: String
   field :sort_key, type: Integer
+  field :most_recent, type: Boolean
   field :statesman_metadata, type: Hash
 
   index(sort_key: 1)
+  index({ other_mongoid_model_id: 1, most_recent: 1 }, unique: true, sparse: true)
 
   belongs_to :my_mongoid_model, index: true
 

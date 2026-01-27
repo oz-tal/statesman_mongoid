@@ -1,7 +1,23 @@
-# Restored mongoid support, fixes applied: concernized the module and added includes + fields + index
-# Extracted from commit b9906ee1cf0ac6c1bbdd56c003ffe407c2f59833
+# frozen_string_literal: true
 
-require 'active_support'
+# MongoidTransition concern for Statesman transition models
+#
+# Include this in your transition model to get the required fields and indexes.
+# Fields:
+# - to_state: The target state of this transition
+# - from_state: The source state (optional, for Statesman 13.1+ compatibility)
+# - sort_key: Integer for ordering transitions
+# - statesman_metadata: Hash for storing transition metadata
+# - most_recent: Boolean flag for query optimization (used when transactions available)
+#
+# Example:
+#   class OrderTransition
+#     include Mongoid::Document
+#     include Statesman::Adapters::MongoidTransition
+#     belongs_to :order, index: true
+#   end
+
+require 'active_support/concern'
 
 module Statesman
   module Adapters
@@ -13,15 +29,16 @@ module Statesman
         include ::Mongoid::Timestamps
 
         field :to_state,           type: String
+        field :from_state,         type: String
         field :statesman_metadata, type: Hash
         field :sort_key,           type: Integer
         field :most_recent,        type: ::Mongoid::Boolean
 
         index({ sort_key: 1 })
 
-        # TODO: Remove or document why is this neccessary
-        self.send(:alias_method, :metadata, :statesman_metadata)
-        self.send(:alias_method, :metadata=, :statesman_metadata=)
+        # Alias metadata for convenience
+        alias_method :metadata, :statesman_metadata
+        alias_method :metadata=, :statesman_metadata=
       end
     end
   end
