@@ -57,7 +57,7 @@ module Statesman
       end
 
       def reset
-        ::Mongoid::QueryCache.clear_cache
+        clear_query_cache
         @last_transition = nil
       end
 
@@ -157,6 +157,17 @@ module Statesman
 
       def next_sort_key
         (last && last.sort_key + 10) || 10
+      end
+
+      # Clear query cache - handles both Mongoid 8 and 9 APIs
+      def clear_query_cache
+        return unless defined?(::Mongoid::QueryCache) && ::Mongoid::QueryCache.respond_to?(:clear_cache)
+
+        # Mongoid 8.x
+        ::Mongoid::QueryCache.clear_cache
+
+        # Mongoid 9.x doesn't have a global query cache to clear in the same way
+        # The query cache is now per-request/thread and managed differently
       end
     end
   end

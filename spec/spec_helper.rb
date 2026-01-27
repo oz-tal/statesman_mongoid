@@ -35,6 +35,11 @@ RSpec.configure do |config|
         mongo_config.connect_to('statesman_test', server_selection_timeout: 2)
       end
       Mongoid.purge!
+
+      # Create indexes for test models (required for unique constraint tests)
+      [MyMongoidModelTransition, OtherMongoidModelTransition].each do |klass|
+        klass.create_indexes
+      end
     rescue Mongo::Error::NoServerAvailable => e
       puts 'The spec suite requires MongoDB to be installed and running locally'
       puts "Mongo dependent specs can be filtered with rspec --tag '~mongo'"

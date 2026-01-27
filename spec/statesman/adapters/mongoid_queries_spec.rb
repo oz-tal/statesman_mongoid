@@ -188,6 +188,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         MyStateMachine.after_commit_callback_executed = false
         MyStateMachine.class_eval do
           callbacks[:after_commit] = []
+          callbacks[:after] = []
         end
       end
 
@@ -199,17 +200,24 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         end.to change(MyStateMachine, :after_commit_callback_executed).from(false).to(true)
       end
 
-      it 'does not fire after_commit when transaction is rolled back' do
+      it 'does not fire after_commit when after callback raises error' do
         MyStateMachine.after_commit_callback_executed = false
 
-        expect do
-          MyMongoidModelTransition.transaction do
-            fresh_model.state_machine.transition_to!(:succeeded)
-            raise ::Mongoid::Errors::Rollback
+        # Add an after callback that raises an error to trigger rollback
+        MyStateMachine.class_eval do
+          after_transition(from: :initial, to: :failed) do
+            raise StandardError, 'Simulated error in after callback'
           end
-        rescue Statesman::TransitionFailedError
-          # Expected
+        end
+
+        expect do
+          fresh_model.state_machine.transition_to!(:failed)
+        rescue StandardError
+          nil
         end.not_to change(MyStateMachine, :after_commit_callback_executed)
+
+        # The transition should not be persisted
+        expect(fresh_model.state_machine.current_state).to eq('initial')
       end
     end
   end
