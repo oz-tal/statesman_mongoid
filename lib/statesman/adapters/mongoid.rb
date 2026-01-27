@@ -45,6 +45,8 @@ module Statesman
         end
       rescue ::Mongo::Error::OperationFailure => e
         handle_operation_failure(e)
+      ensure
+        reset
       end
 
       def history(force_reload: false)
