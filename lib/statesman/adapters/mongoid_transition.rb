@@ -21,6 +21,8 @@ require 'active_support/concern'
 
 module Statesman
   module Adapters
+    # ActiveSupport::Concern that adds required fields and indexes to Mongoid transition models.
+    # Include this in your transition document class along with the parent association.
     module MongoidTransition
       extend ActiveSupport::Concern
 

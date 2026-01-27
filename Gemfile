@@ -1,25 +1,21 @@
 # frozen_string_literal: true
 
-source "https://rubygems.org"
+source 'https://rubygems.org'
 
 gemspec
 
 if ENV['RAILS_VERSION'] == 'master'
-  gem "rails", git: "https://github.com/rails/rails"
+  gem 'rails', git: 'https://github.com/rails/rails'
 elsif ENV['RAILS_VERSION']
-  gem "rails", "~> #{ENV['RAILS_VERSION']}"
+  gem 'rails', "~> #{ENV['RAILS_VERSION']}"
 end
 
-if ENV['MONGOID_VERSION']
-  gem "mongoid", "~> #{ENV['MONGOID_VERSION']}"
-end
+gem 'mongoid', "~> #{ENV['MONGOID_VERSION']}" if ENV['MONGOID_VERSION']
 
-if ENV['STATESMAN_VERSION']
-  gem "statesman", "~> #{ENV['STATESMAN_VERSION']}"
-end
+gem 'statesman', "~> #{ENV['STATESMAN_VERSION']}" if ENV['STATESMAN_VERSION']
 
 group :development do
-  gem "pry"
+  gem 'pry'
 end
 
 group :test do
@@ -27,6 +23,6 @@ group :test do
   # Required as separate gem in Ruby 3.4+
   gem 'base64'
   gem 'bigdecimal'
-  gem 'mutex_m'
   gem 'drb'
+  gem 'mutex_m'
 end

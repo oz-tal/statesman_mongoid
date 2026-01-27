@@ -66,7 +66,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         subject { MyMongoidModel.in_state(:succeeded) }
 
         it { is_expected.to include model }
-        it { is_expected.to_not include other_model }
+        it { is_expected.not_to include other_model }
       end
 
       context 'given multiple states' do
@@ -96,7 +96,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
         subject { MyMongoidModel.not_in_state(:failed) }
 
         it { is_expected.to include model }
-        it { is_expected.to_not include other_model }
+        it { is_expected.not_to include other_model }
       end
 
       context 'given multiple states' do
@@ -137,7 +137,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       describe '.in_state' do
         subject(:query) { MyMongoidModel.in_state(:succeeded) }
 
-        specify { expect { query }.to_not raise_error }
+        specify { expect { query }.not_to raise_error }
       end
     end
 
@@ -162,7 +162,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       describe '.in_state' do
         subject(:query) { MyMongoidModel.in_state(:succeeded) }
 
-        specify { expect { query }.to_not raise_error }
+        specify { expect { query }.not_to raise_error }
       end
     end
 
@@ -264,7 +264,7 @@ describe Statesman::Adapters::MongoidQueries, mongo: true do
       end
 
       it 'does not raise an error' do
-        expect { check_missing_methods! }.to_not raise_exception
+        expect { check_missing_methods! }.not_to raise_exception
       end
     end
 

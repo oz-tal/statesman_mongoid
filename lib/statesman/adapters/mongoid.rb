@@ -13,6 +13,10 @@
 
 module Statesman
   module Adapters
+    # Mongoid adapter for Statesman state machine transitions.
+    #
+    # Provides MongoDB persistence for state transitions with optional
+    # transaction support when running Mongoid 9+ with a replica set.
     class Mongoid
       attr_reader :transition_class, :parent_model
 
@@ -51,14 +55,16 @@ module Statesman
       def last(force_reload: false)
         if force_reload
           @last_transition = history(force_reload: true).last
+        elsif instance_variable_defined?(:@last_transition)
+          @last_transition
         else
-          @last_transition ||= history.last
+          @last_transition = history.last
         end
       end
 
       def reset
         clear_query_cache
-        @last_transition = nil
+        remove_instance_variable(:@last_transition) if instance_variable_defined?(:@last_transition)
       end
 
       private
@@ -100,8 +106,6 @@ module Statesman
       rescue ::Mongoid::Errors::Rollback
         reset
         raise Statesman::TransitionFailedError, 'Transaction was rolled back'
-      ensure
-        @last_transition = nil unless transition&.persisted?
       end
 
       # Fallback mode (Mongoid 8.x or standalone MongoDB)
@@ -117,8 +121,6 @@ module Statesman
         end
 
         transition
-      ensure
-        @last_transition = nil
       end
 
       def handle_operation_failure(error)
@@ -156,7 +158,7 @@ module Statesman
       end
 
       def next_sort_key
-        (last && last.sort_key + 10) || 10
+        (last && (last.sort_key + 10)) || 10
       end
 
       # Clear query cache - handles both Mongoid 8 and 9 APIs

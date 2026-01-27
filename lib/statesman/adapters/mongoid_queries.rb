@@ -28,6 +28,10 @@
 
 module Statesman
   module Adapters
+    # Provides state-based query scopes for Mongoid models using Statesman.
+    #
+    # Adds `in_state` and `not_in_state` class methods to query models
+    # by their current state machine state.
     module MongoidQueries
       def self.check_missing_methods!(base)
         missing_methods = %i[transition_class initial_state]
@@ -59,8 +63,10 @@ module Statesman
         ClassMethods.new(**args)
       end
 
+      # Module factory that creates query methods with the given configuration.
+      # This is a Module subclass that can be included in model classes.
       class ClassMethods < Module
-        def initialize(**args)
+        def initialize(**args) # rubocop:disable Lint/MissingSuper
           @args = args
         end
 
@@ -108,6 +114,9 @@ module Statesman
         end
       end
 
+      # Builds MongoDB aggregation queries to find models by their current state.
+      # Supports two strategies: most_recent boolean optimization (fast) or
+      # aggregation pipeline (fallback for non-transactional environments).
       class QueryBuilder
         def initialize(model, transition_class:, initial_state:,
                        most_recent_transition_alias: nil,
@@ -171,13 +180,13 @@ module Statesman
           aggregation = [
             # Group by foreign key
             {
-              "$group": {
+              '$group': {
                 _id: "$#{model_foreign_key}",
-                model_foreign_key => { "$first": "$#{model_foreign_key}" }
+                model_foreign_key => { '$first': "$#{model_foreign_key}" }
               }
             },
             # Trim response to only the foreign key
-            { "$project": { _id: 0 } }
+            { '$project': { _id: 0 } }
           ]
 
           # Hit the database and return a flat array of ids
@@ -187,19 +196,19 @@ module Statesman
         def aggregate_ids_for_most_recent(states, inclusive_match: true)
           aggregation = [
             # Sort most recent
-            { "$sort": { sort_key: -1 } },
+            { '$sort': { sort_key: -1 } },
             # Group by foreign key & get most recent states
             {
-              "$group": {
+              '$group': {
                 _id: "$#{model_foreign_key}",
-                to_state: { "$first": '$to_state' },
-                model_foreign_key => { "$first": "$#{model_foreign_key}" }
+                to_state: { '$first': '$to_state' },
+                model_foreign_key => { '$first': "$#{model_foreign_key}" }
               }
             },
             # Include/exclude states by provided states
-            { "$match": { to_state: { (inclusive_match ? '$in' : '$nin') => states } } },
+            { '$match': { to_state: { (inclusive_match ? '$in' : '$nin') => states } } },
             # Trim response to only the foreign key
-            { "$project": { _id: 0, to_state: 0 } }
+            { '$project': { _id: 0, to_state: 0 } }
           ]
 
           # Hit the database and return a flat array of ids
@@ -213,9 +222,9 @@ module Statesman
         # Check if we can use the most_recent optimization
         # Requires: most_recent field exists AND transactions are available
         def use_most_recent_optimization?
-          return @use_most_recent if defined?(@use_most_recent)
+          return @use_most_recent_optimization if defined?(@use_most_recent_optimization)
 
-          @use_most_recent =
+          @use_most_recent_optimization =
             transition_class.fields.key?('most_recent') &&
             StatesmanMongoid.transactions_available? &&
             transition_class.where(most_recent: true).exists?

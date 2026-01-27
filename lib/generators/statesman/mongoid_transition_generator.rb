@@ -1,21 +1,25 @@
+# frozen_string_literal: true
+
 # Extracted from commit b9906ee1cf0ac6c1bbdd56c003ffe407c2f59833
 
-require "rails/generators"
-require "generators/statesman/generator_helpers"
+require 'rails/generators'
+require 'generators/statesman/generator_helpers'
 
 module Statesman
+  # Rails generator for creating Mongoid-based Statesman transition models.
+  # Usage: rails generate statesman:mongoid_transition Order OrderTransition
   class MongoidTransitionGenerator < Rails::Generators::Base
     include Statesman::GeneratorHelpers
 
-    desc "Create a Mongoid-based transition model with the required attributes"
+    desc 'Create a Mongoid-based transition model with the required attributes'
 
-    argument :parent, type: :string, desc: "Your parent model name"
-    argument :klass, type: :string, desc: "Your transition model name"
+    argument :parent, type: :string, desc: 'Your parent model name'
+    argument :klass, type: :string, desc: 'Your transition model name'
 
-    source_root File.expand_path("templates", __dir__)
+    source_root File.expand_path('templates', __dir__)
 
     def create_model_file
-      template("mongoid_transition_model.rb.erb", model_file_name)
+      template('mongoid_transition_model.rb.erb', model_file_name)
     end
 
     private

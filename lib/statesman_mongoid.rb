@@ -2,6 +2,11 @@
 
 require_relative 'statesman_mongoid/version'
 
+# StatesmanMongoid provides MongoDB/Mongoid adapters for the Statesman state machine library.
+#
+# It detects runtime capabilities and provides appropriate transaction support:
+# - Mongoid 9+ with replica set: Full ACID transactions with proper after_commit timing
+# - Mongoid 8.x or standalone: Session-only fallback mode
 module StatesmanMongoid
   class Error < StandardError; end
 
@@ -35,4 +40,4 @@ module StatesmanMongoid
 end
 
 # Load adapters
-Dir[File.join(__dir__, 'statesman/adapters/*')].each { |f| require f }
+Dir[File.join(__dir__, 'statesman/adapters/*')].sort.each { |f| require f }

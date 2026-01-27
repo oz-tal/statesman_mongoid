@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'statesman/adapters/mongoid_transition'
 require 'statesman/adapters/mongoid_queries'
 require 'mongoid'

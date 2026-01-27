@@ -37,9 +37,7 @@ RSpec.configure do |config|
       Mongoid.purge!
 
       # Create indexes for test models (required for unique constraint tests)
-      [MyMongoidModelTransition, OtherMongoidModelTransition].each do |klass|
-        klass.create_indexes
-      end
+      [MyMongoidModelTransition, OtherMongoidModelTransition].each(&:create_indexes)
     rescue Mongo::Error::NoServerAvailable => e
       puts 'The spec suite requires MongoDB to be installed and running locally'
       puts "Mongo dependent specs can be filtered with rspec --tag '~mongo'"
