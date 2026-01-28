@@ -1,0 +1,104 @@
+# frozen_string_literal: true
+
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 2.7
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'vendor/**/*'
+    - 'spec/dummy/**/*'
+    - 'bin/**/*'
+
+# Allow longer classes for complex adapter implementations
+Metrics/ClassLength:
+  Max: 120
+  Exclude:
+    - 'spec/**/*'
+
+# Allow slightly longer methods for readability in adapter code
+Metrics/MethodLength:
+  Max: 15
+  Exclude:
+    - 'spec/**/*'
+
+# RSpec describe blocks are naturally long
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - '*.gemspec'
+
+# Allow constants in spec blocks for test setup
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'spec/**/*'
+
+# Development dependencies in gemspec is a valid pattern for gems
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# RSpec-specific cops
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/MultipleExpectations:
+  Max: 5
+
+RSpec/NestedGroups:
+  Max: 5
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 10
+
+# Allow flexible context wording
+RSpec/ContextWording:
+  Enabled: false
+
+# Allow normal doubles in specs for testing external interfaces
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+# Allow multiple hooks for complex test setup
+RSpec/ScatteredSetup:
+  Enabled: false
+
+# Allow explicit class names for clarity in adapter tests
+RSpec/DescribedClass:
+  Enabled: false
+
+# Allow expect().to receive for simpler inline expectations
+RSpec/MessageSpies:
+  Enabled: false
+
+# Allow any_instance stubbing for testing callbacks
+RSpec/AnyInstance:
+  Enabled: false
+
+# Allow flexible file paths for feature specs (new split cops)
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
+RSpec/SpecFilePathSuffix:
+  Enabled: false
+
+# Allow descriptive strings as second argument to describe
+RSpec/DescribeMethod:
+  Enabled: false
+
+# Allow leaky constants in test setup
+RSpec/LeakyConstantDeclaration:
+  Enabled: false
+
+# Allow puts for diagnostic output in spec_helper
+RSpec/Output:
+  Enabled: false
+
+# Allow hash-style metadata (mongo: true)
+RSpec/MetadataStyle:
+  Enabled: false
+
+# Allow include_examples
+RSpec/IncludeExamples:
+  Enabled: false

@@ -1,0 +1,17 @@
+development:
+  clients:
+    default:
+      database: statesman_mongoid_development
+      hosts:
+        - localhost:27017
+      options:
+        server_selection_timeout: 5
+
+test:
+  clients:
+    default:
+      database: statesman_mongoid_test
+      hosts:
+        - localhost:27017
+      options:
+        server_selection_timeout: 2
